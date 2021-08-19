@@ -1,4 +1,4 @@
-/* CP2130 class for Qt - Version 2.0.0
+/* CP2130 class for Qt - Version 2.0.1
    Copyright (c) 2021 Samuel Lourenço
 
    This library is free software: you can redistribute it and/or modify it
@@ -55,16 +55,19 @@ bool CP2130::PinConfig::operator !=(const CP2130::PinConfig &other) const
 // "Equal to" operator for PROMConfig
 bool CP2130::PROMConfig::operator ==(const CP2130::PROMConfig &other) const
 {
-    bool retval = true;
+    bool equal = true;
     for (size_t i = 0; i < PROM_BLOCKS; ++i) {
         for (size_t j = 0; j < PROM_BLOCK_SIZE; ++j) {
             if (blocks[i][j] != other.blocks[i][j]) {
-                retval = false;
+                equal = false;
                 break;
             }
         }
+        if (!equal) {  // Added in version 2.0.1 in order to fix efficiency issue
+            break;
+        }
     }
-    return retval;
+    return equal;
 }
 
 // "Not equal to" operator for PROMConfig
@@ -321,17 +324,17 @@ quint8 CP2130::getClockDivider(int &errcnt, QString &errstr)
 // Returns the chip select status for a given channel
 bool CP2130::getCS(quint8 channel, int &errcnt, QString &errstr)
 {
-    bool retval;
+    bool cs;
     if (channel > 10) {
         errcnt += 1;
         errstr.append(QObject::tr("In getCS(): SPI channel value must be between 0 and 10.\n"));  // Program logic error
-        retval = false;
+        cs = false;
     } else {
         unsigned char controlBufferIn[4];
         controlTransfer(GET, GET_GPIO_CHIP_SELECT, 0x0000, 0x0000, controlBufferIn, static_cast<quint16>(sizeof(controlBufferIn)), errcnt, errstr);
-        retval = (0x01 << channel & (controlBufferIn[0] << 8 | controlBufferIn[1])) != 0x00;
+        cs = (0x01 << channel & (controlBufferIn[0] << 8 | controlBufferIn[1])) != 0x00;
     }
-    return retval;
+    return cs;
 }
 
 // Returns the address of the endpoint assuming the IN direction
