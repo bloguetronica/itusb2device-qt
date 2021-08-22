@@ -1,4 +1,4 @@
-/* CP2130 class for Qt - Version 2.0.1
+/* CP2130 class for Qt - Version 2.0.2
    Copyright (c) 2021 Samuel Lourenço
 
    This library is free software: you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ extern "C" {
 }
 
 // Definitions
-const unsigned int TR_TIMEOUT = 100;  // Transfer timeout in milliseconds
+const unsigned int TR_TIMEOUT = 500;  // Transfer timeout in milliseconds (increased to 500ms since version 2.0.2)
 
 // "Equal to" operator for EventCounter
 bool CP2130::EventCounter::operator ==(const CP2130::EventCounter &other) const
@@ -169,14 +169,14 @@ void CP2130::bulkTransfer(quint8 endpointAddr, unsigned char *data, int length, 
         errstr.append(QObject::tr("In bulkTransfer(): device is not open.\n"));  // Program logic error
     } else {
         int result = libusb_bulk_transfer(handle_, endpointAddr, data, length, transferred, TR_TIMEOUT);
-        if (result != 0) {
+        if (result != 0 || (transferred != nullptr && *transferred != length)) {  // Since version 2.0.2, the number of transferred bytes is also verified, as long as a valid (non-null) pointer is passed via "transferred"
             errcnt += 1;
             if (endpointAddr < 0x80) {
                 errstr.append(QObject::tr("Failed bulk OUT transfer to endpoint %1 (address 0x%2).\n").arg(0x0F & endpointAddr).arg(endpointAddr, 2, 16, QChar('0')));
             } else {
                 errstr.append(QObject::tr("Failed bulk IN transfer from endpoint %1 (address 0x%2).\n").arg(0x0F & endpointAddr).arg(endpointAddr, 2, 16, QChar('0')));
             }
-            if (result == LIBUSB_ERROR_NO_DEVICE) {
+            if (result == LIBUSB_ERROR_NO_DEVICE || result == LIBUSB_ERROR_IO) {  // Note that libusb_bulk_transfer() may return "LIBUSB_ERROR_IO" [-1] on device disconnect (version 2.0.2)
                 disconnected_ = true;  // This reports that the device has been disconnected
             }
         }
@@ -258,7 +258,7 @@ void CP2130::controlTransfer(quint8 bmRequestType, quint8 bRequest, quint16 wVal
         if (result != wLength) {
             errcnt += 1;
             errstr.append(QObject::tr("Failed control transfer (0x%1, 0x%2).\n").arg(bmRequestType, 2, 16, QChar('0')).arg(bRequest, 2, 16, QChar('0')));
-            if (result == LIBUSB_ERROR_NO_DEVICE) {
+            if (result == LIBUSB_ERROR_NO_DEVICE || result == LIBUSB_ERROR_IO || result == LIBUSB_ERROR_PIPE) {   // Note that libusb_control_transfer() may return "LIBUSB_ERROR_IO" [-1] or "LIBUSB_ERROR_PIPE" [-9] on device disconnect (version 2.0.2)
                 disconnected_ = true;  // This reports that the device has been disconnected
             }
         }
@@ -844,8 +844,12 @@ QVector<quint8> CP2130::spiRead(quint32 bytesToRead, quint8 endpointInAddr, quin
         static_cast<quint8>(bytesToRead >> 16),
         static_cast<quint8>(bytesToRead >> 24)
     };
+#if LIBUSB_API_VERSION >= 0x01000105
+    bulkTransfer(endpointOutAddr, readCommandBuffer, static_cast<int>(sizeof(readCommandBuffer)), nullptr, errcnt, errstr);
+#else
     int bytesWritten;
     bulkTransfer(endpointOutAddr, readCommandBuffer, static_cast<int>(sizeof(readCommandBuffer)), &bytesWritten, errcnt, errstr);
+#endif
     unsigned char readInputBuffer[bytesToRead];
     int bytesRead = 0;  // Important!
     bulkTransfer(endpointInAddr, readInputBuffer, static_cast<int>(sizeof(readInputBuffer)), &bytesRead, errcnt, errstr);
@@ -879,8 +883,12 @@ void CP2130::spiWrite(const QVector<quint8> &data, quint8 endpointOutAddr, int &
     for (size_t i = 0; i < bytesToWrite; ++i) {
         writeCommandBuffer[i + 8] = data[i];
     }
+#if LIBUSB_API_VERSION >= 0x01000105
+    bulkTransfer(endpointOutAddr, writeCommandBuffer, static_cast<int>(sizeof(writeCommandBuffer)), nullptr, errcnt, errstr);
+#else
     int bytesWritten;
     bulkTransfer(endpointOutAddr, writeCommandBuffer, static_cast<int>(sizeof(writeCommandBuffer)), &bytesWritten, errcnt, errstr);
+#endif
 }
 
 // This function is a shorthand version of the previous one (the endpoint OUT address is automatically deduced at the cost of decreased speed)
