@@ -1,4 +1,4 @@
-/* ITUSB2 device class for Qt - Version 3.0.0
+/* ITUSB2 device class for Qt - Version 3.0.1
    Requires CP2130 class for Qt version 2.0.0 or later
    Copyright (c) 2021 Samuel Lourenço
 
@@ -75,9 +75,11 @@ void ITUSB2Device::close()
 // Detaches the DUT (device under test) to the HUT (host under test)
 void ITUSB2Device::detach(int &errcnt, QString &errstr)
 {
-    if (getUSBPowerStatus(errcnt, errstr) || getUSBDataStatus(errcnt, errstr)) {  // If either VBUS or the data lines are connected
+    if (getUSBDataStatus(errcnt, errstr)) {  // If the data lines are connected
         switchUSBData(false, errcnt, errstr);  // Disconnect the data lines
         QThread::msleep(100);  // Wait 100ms in order to emulate a manual detachment of the device
+    }
+    if (getUSBPowerStatus(errcnt, errstr)) {  // If VBUS is switched on
         switchUSBPower(false, errcnt, errstr);  // Switch VBUS off
         QThread::msleep(100);  // Wait 100ms to allow for device shutdown
     }
