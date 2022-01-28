@@ -1,5 +1,5 @@
-/* ITUSB2 device class for Qt - Version 3.2.0
-   Requires CP2130 class for Qt version 2.0.0 or later
+/* ITUSB2 device class for Qt - Version 3.3.0
+   Requires CP2130 class for Qt version 2.1.0 or later
    Copyright (c) 2021-2022 Samuel Lourenço
 
    This library is free software: you can redistribute it and/or modify it
@@ -167,7 +167,8 @@ bool ITUSB2Device::getUSBPowerStatus(int &errcnt, QString &errstr)
     return !cp2130_.getGPIO1(errcnt, errstr);  // Return the current state of the negated !UPEN signal
 }
 
-// Opens the device having the given serial number, and assigns its handle
+// Opens a device and assigns its handle
+// The serial number is optional since version 3.3.0
 int ITUSB2Device::open(const QString &serial)
 {
     return cp2130_.open(VID, PID, serial);
