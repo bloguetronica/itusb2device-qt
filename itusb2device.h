@@ -1,4 +1,4 @@
-/* ITUSB2 device class for Qt - Version 3.3.1
+/* ITUSB2 device class for Qt - Version 3.3.2
    Requires CP2130 class for Qt version 2.1.0 or later
    Copyright (c) 2021-2022 Samuel Lourenço
 
@@ -39,8 +39,8 @@ private:
 
 public:
     // Class definitions
-    static const quint16 VID = 0x10C4;                           // USB vendor ID
-    static const quint16 PID = 0x8CDF;                           // USB product ID
+    static const quint16 VID = 0x10c4;                           // USB vendor ID
+    static const quint16 PID = 0x8cdf;                           // USB product ID
     static const int SUCCESS = CP2130::SUCCESS;                  // Returned by open() if successful
     static const int ERROR_INIT = CP2130::ERROR_INIT;            // Returned by open() in case of a libusb initialization failure
     static const int ERROR_NOT_FOUND = CP2130::ERROR_NOT_FOUND;  // Returned by open() if the device was not found
