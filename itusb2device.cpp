@@ -1,4 +1,4 @@
-/* ITUSB2 device class for Qt - Version 3.3.2
+/* ITUSB2 device class for Qt - Version 3.3.3
    Requires CP2130 class for Qt version 2.1.0 or later
    Copyright (c) 2021-2022 Samuel Lourenço
 
@@ -99,6 +99,7 @@ CP2130::SiliconVersion ITUSB2Device::getCP2130SiliconVersion(int &errcnt, QStrin
 float ITUSB2Device::getCurrent(int &errcnt, QString &errstr)
 {
     cp2130_.selectCS(0, errcnt, errstr);  // Enable the chip select corresponding to channel 0, and disable any others
+    QThread::usleep(100);  // Wait 100us, in order to prevent possible errors after enabling the chip select (workaround implemented in version 3.3.3)
     getRawCurrent(errcnt, errstr);  // Discard this reading, as it will reflect a past measurement
     size_t currentCodeSum = 0;
     for (size_t i = 0; i < N_SAMPLES; ++i) {
