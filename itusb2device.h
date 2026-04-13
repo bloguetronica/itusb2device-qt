@@ -46,7 +46,7 @@ public:
     static const int ERROR_NOT_FOUND = CP2130::ERROR_NOT_FOUND;  // Returned by open() if the device was not found
     static const int ERROR_BUSY = CP2130::ERROR_BUSY;            // Returned by open() if the device is already in use
 
-    explicit ITUSB2Device();
+    explicit ITUSB2Device();  // Explicit since version 3.3.4
 
     bool disconnected() const;
     bool isOpen() const;
